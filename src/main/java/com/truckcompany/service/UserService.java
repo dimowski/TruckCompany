@@ -148,8 +148,22 @@ public class UserService {
 
     public User createUser(ManagedUserVM managedUserVM) {
         User user = new User();
-        fillFieldsForUser(user, managedUserVM);
-
+        user.setLogin(managedUserVM.getLogin());
+        user.setFirstName(managedUserVM.getFirstName());
+        user.setLastName(managedUserVM.getLastName());
+        user.setEmail(managedUserVM.getEmail());
+        if (managedUserVM.getLangKey() == null) {
+            user.setLangKey("en"); // default language
+        } else {
+            user.setLangKey(managedUserVM.getLangKey());
+        }
+        if (managedUserVM.getAuthorities() != null) {
+            Set<Authority> authorities = new HashSet<>();
+            managedUserVM.getAuthorities().stream().forEach(
+                authority -> authorities.add(authorityRepository.findOne(authority))
+            );
+            user.setAuthorities(authorities);
+        }
         String encryptedPassword = passwordEncoder.encode(RandomUtil.generatePassword());
         user.setPassword(encryptedPassword);
         user.setResetKey(RandomUtil.generateResetKey());
@@ -162,7 +176,22 @@ public class UserService {
 
     public User createEmployee(ManagedUserVM managedUserVM, User userAdmin, HttpServletRequest request) {
         User user = new User();
-        fillFieldsForUser(user, managedUserVM);
+        user.setLogin(managedUserVM.getLogin());
+        user.setFirstName(managedUserVM.getFirstName());
+        user.setLastName(managedUserVM.getLastName());
+        user.setEmail(managedUserVM.getEmail());
+        if (managedUserVM.getLangKey() == null) {
+            user.setLangKey("en"); // default language
+        } else {
+            user.setLangKey(managedUserVM.getLangKey());
+        }
+        if (managedUserVM.getAuthorities() != null) {
+            Set<Authority> authorities = new HashSet<>();
+            managedUserVM.getAuthorities().stream().forEach(
+                authority -> authorities.add(authorityRepository.findOne(authority))
+            );
+            user.setAuthorities(authorities);
+        }
 
         Company company = companyRepository.getOne(userAdmin.getCompany().getId());
         user.setCompany(company);
@@ -170,7 +199,7 @@ public class UserService {
         user.setActivationKey(passwordEncoder.encode(new Date().toString()).substring(0, 20));
         user.setActivated(true);
         userRepository.save(user);
-        log.debug("Created Information for Employee: {}", user);
+        log.debug("Created Information for User: {}", user);
 
         String baseUrl = request.getScheme() + // "http"
             "://" +                                // "://"
@@ -184,46 +213,12 @@ public class UserService {
         return user;
     }
 
-    private void fillFieldsForUser(User user, ManagedUserVM managedUserVM){
-        user.setLogin(managedUserVM.getLogin());
-        user.setFirstName(managedUserVM.getFirstName());
-        user.setLastName(managedUserVM.getLastName());
-        user.setEmail(managedUserVM.getEmail());
-        user.setCity(managedUserVM.getCity());
-        user.setStreet(managedUserVM.getStreet());
-        user.setHouse(managedUserVM.getHouse());
-        user.setFlat(managedUserVM.getFlat());
-        user.setPassport(managedUserVM.getPassport());
-        user.setBirthDate(managedUserVM.getBirthDate());
-        if (managedUserVM.getLangKey() == null) {
-            user.setLangKey("en"); // default language
-        } else {
-            user.setLangKey(managedUserVM.getLangKey());
-        }
-        if (managedUserVM.getAuthorities() != null) {
-            Set<Authority> authorities = new HashSet<>();
-            managedUserVM.getAuthorities().stream().forEach(
-                authority -> authorities.add(authorityRepository.findOne(authority))
-            );
-            user.setAuthorities(authorities);
-        }
-    }
-
     public void updateUser(String firstName, String lastName, String email, String langKey) {
         userRepository.findOneByLogin(SecurityUtils.getCurrentUserLogin()).ifPresent(u -> {
             u.setFirstName(firstName);
             u.setLastName(lastName);
             u.setEmail(email);
             u.setLangKey(langKey);
-            userRepository.save(u);
-            log.debug("Changed Information for User: {}", u);
-        });
-    }
-
-    public void updateUser(ManagedUserVM managedUserVM){
-
-        userRepository.findOneByLogin(managedUserVM.getLogin()).ifPresent(u -> {
-            fillFieldsForUser(u, managedUserVM);
             userRepository.save(u);
             log.debug("Changed Information for User: {}", u);
         });
