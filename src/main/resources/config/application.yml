@@ -77,4 +77,4 @@ jhipster:
         displayOnActiveProfiles: dev
 
 application:
-    rootFolderForUpload: I:\upload\
+    rootFolderForUpload: D:\upload\
